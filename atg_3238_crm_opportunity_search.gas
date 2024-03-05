@@ -1,0 +1,871 @@
+Program.Sub.ScreenSU.Start
+gui.F_Results..create
+gui.F_Results..caption("Search Opportunities")
+gui.F_Results..size(11835,5715)
+gui.F_Results..position(0,0)
+gui.F_Results..event(unload,f_results_unload)
+gui.F_Results..alwaysontop(False)
+gui.F_Results..fontname("Arial")
+gui.F_Results..fontsize(8)
+gui.F_Results..forecolor(0)
+gui.F_Results..fontstyle(,,,,)
+gui.F_Results..BackColor(-2147483633)
+gui.F_Results..controlbox(True)
+gui.F_Results..maxbutton(True)
+gui.F_Results..minbutton(True)
+gui.F_Results..mousepointer(0)
+gui.F_Results..moveable(True)
+gui.F_Results..sizeable(False)
+gui.F_Results..ShowInTaskBar(True)
+gui.F_Results..titlebar(True)
+gui.F_Results.gsfx_companies.create(gsflexgrid)
+gui.F_Results.gsfx_companies.FixedRows(0)
+gui.F_Results.gsfx_companies.FixedCols(0)
+gui.F_Results.gsfx_companies.visible(True)
+gui.F_Results.gsfx_companies.size(11235,4275)
+gui.F_Results.gsfx_companies.zorder(0)
+gui.F_Results.gsfx_companies.position(200,800)
+gui.F_Results.gsfx_companies.enabled(True)
+gui.F_Results.txt_search_text.create(textbox,"",True,4500,300,0,200,400,True,0,Arial,8,-2147483643,1)
+gui.F_Results.txt_search_text.event(keypressenter,cmd_search_click)
+gui.F_Results.cmd_Search.create(button)
+gui.F_Results.cmd_Search.caption("Search")
+gui.F_Results.cmd_Search.visible(True)
+gui.F_Results.cmd_Search.size(1000,375)
+gui.F_Results.cmd_Search.zorder(0)
+gui.F_Results.cmd_Search.position(4800,300)
+gui.F_Results.cmd_Search.enabled(True)
+gui.F_Results.cmd_Search.fontname("Arial")
+gui.F_Results.cmd_Search.fontsize(8)
+gui.F_Results.cmd_Search.event(click,cmd_search_click)
+gui.F_Results.lbl_text.create(label,"Text to Search For:",True,1935,255,1,200,200,True,0,Arial,8,-2147483633,0)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+	V.UDT.Opp.Define("Name_Customer",String,"Name_Customer")
+	V.UDT.Opp.Define("COMPID",String,"CompID")
+	V.UDT.Opp.Define("CompType",String,"CompType")
+	V.UDT.Opp.Define("ODESC",String,"ODESC")
+	V.UDT.Opp.Define("UF1",String,"UF1")
+	V.UDT.Opp.Define("UF2",String,"UF2")
+	V.UDT.Opp.Define("UF3",String,"UF3")
+	V.UDT.Opp.Define("UF4",String,"UF4")
+	V.UDT.Opp.Define("UF5",String,"UF5")
+	V.UDT.Opp.Define("UF6",String,"UF6")
+	V.UDT.Opp.Define("UF7",String,"UF7")
+	V.UDT.Opp.Define("UF8",String,"UF8")
+	V.UDT.Opp.Define("UF9",String,"UF9")
+	V.UDT.Opp.Define("UF10",String,"UF10")
+	V.UDT.Opp.Define("UF11",String,"UF11")
+	V.UDT.Opp.Define("UF12",String,"UF12")
+	V.UDT.Opp.Define("UF13",String,"UF13")
+	V.UDT.Opp.Define("UF14",String,"UF14")
+	V.UDT.Opp.Define("UF15",String,"UF15")
+	V.UDT.Opp.Define("UF16",String,"UF16")
+	V.uGlobal.uOpps.Declare("Opp")
+	
+	V.UDT.Match.Define("CompID",String,"")
+	V.UDT.Match.Define("CompName",String,"")
+	V.UDT.Match.Define("CompType",String,"")
+	V.UDT.Match.Define("HitLoc",String,"")
+	V.UDT.Match.Define("HitText",String,"")
+	V.UDT.Match.Define("Multi",String,"")
+	V.uGlobal.uMatches.Declare("Match")
+
+	V.UDT.Customer.Define("CustomerID",String,"CUSTOMER")
+Variable.UDT.Customer.Define("CustomerName",String,"NAME_CUSTOMER")
+	V.uGlobal.uCustomers.Declare("Customer")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Coded by: Melinda Keyes
+'Project Start Date: 11/22/2011
+'Quote: 2929
+'Hooks: 42923 CRM.NEt updates TRT
+'  CRM Script Button (30623)
+'Notes:
+'  A GAB program will be written that accepts a text fragment and will search
+'  all opportunity user fields and description for matches and will display the matching
+'  company numbers and names in a separate GAB screen.
+
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Global.bErrs.Declare(Boolean)
+V.Local.sError.Declare(String)
+V.Local.sQuery.Declare(String)
+V.Local.sText.Declare(String)
+V.Local.sReturn.Declare(String)
+V.Local.iC.Declare(Long)
+V.Local.iB.Declare(Long)
+
+F.ODBC.Connection!conX.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+V.Local.sQuery.Set("SELECT CUSTOMER, NAME_CUSTOMER FROM CUSTOMER_MASTER WHERE REC = 1 ORDER BY CUSTOMER")
+F.ODBC.Connection!conX.OpenRecordsetRO("rst",V.Local.sQuery)
+	F.Intrinsic.Variable.LoadUDTFromRecordset("conX","rst","V.uGlobal.uCustomers",False)
+F.ODBC.conX!rst.Close
+
+V.Local.sQuery.Set("SELECT CRM_OPP_MASTER.COMPID,CRM_OPP_MASTER.CompType, CRM_OPP_MASTER.ODESC, CRM_UF_VALUE.UF1, CRM_UF_VALUE.UF2, CRM_UF_VALUE.UF3, CRM_UF_VALUE.UF4, CRM_UF_VALUE.UF5, CRM_UF_VALUE.UF6, CRM_UF_VALUE.UF7, CRM_UF_VALUE.UF8, CRM_UF_VALUE.UF9, CRM_UF_VALUE.UF10, CRM_UF_VALUE.UF11, CRM_UF_VALUE.UF12, CRM_UF_VALUE.UF13, CRM_UF_VALUE.UF14, CRM_UF_VALUE.UF15, CRM_UF_VALUE.UF16 FROM CRM_OPP_MASTER JOIN CRM_UF_VALUE ON CRM_OPP_MASTER.OID = CRM_UF_VALUE.OID order by CRM_OPP_MASTER.compID")
+F.ODBC.Connection!conX.OpenRecordsetRO("rst",V.Local.sQuery)
+F.Intrinsic.Control.DoUntil(V.ODBC.conX!rst.EOF,=,True)
+	'make sure the customer record exists for the compID of the opportunity record before adding it to the UDT
+	F.Intrinsic.Variable.UDTSeek(V.uGlobal.uCustomers!CustomerID,V.ODBC.conX!rst.FieldValTrim!COMPID,0,V.Local.sReturn)
+	F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+		F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+		V.Local.iB.Set(V.uGlobal.uOpps.UBound)
+		V.uGlobal.uOpps(V.Local.iB)!Name_Customer.Set(V.uGlobal.uCustomers(V.Local.sReturn(0))!CustomerName)
+		V.uGlobal.uOpps(V.Local.iB)!COMPID.Set(V.ODBC.conX!rst.FieldVal!COMPID)
+		V.uGlobal.uOpps(V.Local.iB)!COMPTYPE.Set(V.ODBC.conX!rst.FieldVal!COMPTYPE)
+		V.uGlobal.uOpps(V.Local.iB)!ODESC.Set(V.ODBC.conX!rst.FieldVal!ODESC)
+		V.uGlobal.uOpps(V.Local.iB)!UF1.Set(V.ODBC.conX!rst.FieldVal!UF1)
+		V.uGlobal.uOpps(V.Local.iB)!UF2.Set(V.ODBC.conX!rst.FieldVal!UF2)
+		V.uGlobal.uOpps(V.Local.iB)!UF3.Set(V.ODBC.conX!rst.FieldVal!UF3)
+		V.uGlobal.uOpps(V.Local.iB)!UF4.Set(V.ODBC.conX!rst.FieldVal!UF4)
+		V.uGlobal.uOpps(V.Local.iB)!UF5.Set(V.ODBC.conX!rst.FieldVal!UF5)
+		V.uGlobal.uOpps(V.Local.iB)!UF6.Set(V.ODBC.conX!rst.FieldVal!UF6)
+		V.uGlobal.uOpps(V.Local.iB)!UF7.Set(V.ODBC.conX!rst.FieldVal!UF7)
+		V.uGlobal.uOpps(V.Local.iB)!UF8.Set(V.ODBC.conX!rst.FieldVal!UF8)
+		V.uGlobal.uOpps(V.Local.iB)!UF9.Set(V.ODBC.conX!rst.FieldVal!UF9)
+		V.uGlobal.uOpps(V.Local.iB)!UF10.Set(V.ODBC.conX!rst.FieldVal!UF10)
+		V.uGlobal.uOpps(V.Local.iB)!UF11.Set(V.ODBC.conX!rst.FieldVal!UF11)
+		V.uGlobal.uOpps(V.Local.iB)!UF12.Set(V.ODBC.conX!rst.FieldVal!UF12)
+		V.uGlobal.uOpps(V.Local.iB)!UF13.Set(V.ODBC.conX!rst.FieldVal!UF13)
+		V.uGlobal.uOpps(V.Local.iB)!UF14.Set(V.ODBC.conX!rst.FieldVal!UF14)
+		V.uGlobal.uOpps(V.Local.iB)!UF15.Set(V.ODBC.conX!rst.FieldVal!UF15)
+		V.uGlobal.uOpps(V.Local.iB)!UF16.Set(V.ODBC.conX!rst.FieldVal!UF16)
+		F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+		V.uGlobal.uOpps.RedimPreserve(0,V.Local.iB)
+	F.Intrinsic.Control.EndIf
+
+	F.ODBC.conX!rst.MoveNext
+F.Intrinsic.Control.Loop
+F.ODBC.conX!rst.Close
+
+Gui.F_Results.gsfx_companies.Rows(2)
+Gui.F_Results.gsfx_companies.Cols(6)
+
+F.Intrinsic.Control.For(V.Local.iC,0,5,1)
+	Gui.F_Results.gsfx_companies.BuildStyle(1,V.Local.iC,"Format","Alignment",2)
+	Gui.F_Results.gsfx_companies.BuildStyle(1,V.Local.iC,"Type","Locked",True)
+	Gui.F_Results.gsfx_companies.BuildStyle(1,V.Local.iC,"FontStyle","Bold",True)
+F.Intrinsic.Control.Next(V.Local.iC)
+
+F.Intrinsic.Control.For(V.Local.iC,0,4,1)
+	Gui.F_Results.gsfx_companies.BuildStyle(2,V.Local.iC,"Format","Alignment",2)
+	Gui.F_Results.gsfx_companies.BuildStyle(2,V.Local.iC,"Type","Locked",True)
+F.Intrinsic.Control.Next(V.Local.iC)
+Gui.F_Results.gsfx_companies.BuildStyle(2,5,"Format","Alignment",4)
+Gui.F_Results.gsfx_companies.BuildStyle(2,5,"Type","Locked",True)
+
+Gui.F_Results.gsfx_companies.TextMatrix(0,0,"Company ID")
+Gui.F_Results.gsfx_companies.TextMatrix(1,0,"Company Name")
+Gui.F_Results.gsfx_companies.TextMatrix(2,0,"Type")
+Gui.F_Results.gsfx_companies.TextMatrix(3,0,"Hit Location")
+Gui.F_Results.gsfx_companies.TextMatrix(4,0,"Text")
+Gui.F_Results.gsfx_companies.TextMatrix(5,0,"Multi")
+Gui.F_Results.gsfx_companies.ApplyStyle(0,1)
+Gui.F_Results.gsfx_companies.ApplyStyle(1,1)
+Gui.F_Results.gsfx_companies.FixedRows(1)
+Gui.F_Results.gsfx_companies.SetColumnPercentages(".15:.30:.10:.10:.35:.0")
+
+Gui.F_Results..Show
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: ATG_CRM_OPPORTUNITY_SEARCH.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.Debug.SetLA(V.Local.sError)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.Main.End
+
+program.sub.f_results_unload.start
+F.Intrinsic.Control.SetErrorHandler("f_results_unload_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+F.ODBC.Connection!conX.Close
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("f_results_unload_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: ATG_CRM_OPPORTUNITY_SEARCH.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.Debug.SetLA(V.Local.sError)
+	V.Global.bErrs.Set(True)
+Function.Intrinsic.Control.EndIf
+
+program.sub.f_results_unload.end
+
+Program.Sub.lookup.Start
+F.Intrinsic.Control.SetErrorHandler("lookup_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.sText.Declare(String)
+V.Local.sReturn.Declare(String)
+V.Local.sCompanies.Declare(String)
+V.Local.sTemp.Declare(String)
+V.Local.sCompID.Declare(String)
+V.Local.sQuery.Declare(String)
+V.Local.iTemp.Declare(Long)
+V.Local.iC.Declare(Long)
+V.Local.iB.Declare(Long)
+
+V.Local.sText.Set(V.Args.sText)
+V.uGlobal.uMatches.Redim(0,0)
+
+'search descriptions
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!ODESC,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("Description")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!ODESC)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("Description")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!ODESC)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+'search UF1
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF1,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF1")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF1)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF1")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF1)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+'search UF2
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF2,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF2")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF2)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF2")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF2)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+'search UF3
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF3,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF3")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF3)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF3")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF3)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+'search UF4
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF4,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF4")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF4)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF4")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF4)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+'search UF5
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF5,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF5")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF5)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF5")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF5)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+'search UF6
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF6,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF6")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF6)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF6")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF6)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+
+'search UF7
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF7,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF7")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF7)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF7")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF7)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+'search UF8
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF8,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF8")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF8)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF8")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF8)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+'search UF9
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF9,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF9")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF9)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF9")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF9)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+'search UF10
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF10,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF10")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF10)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF10")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF10)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+'search UF11
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF11,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF11")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF11)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF11")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF11)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+'search UF12
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF12,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF12")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF12)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF12")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF12)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+
+'search UF13
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF13,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF13")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF13)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF13")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF13)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+'search UF14
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF14,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF14")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF14)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF14")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF14)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+'search UF15
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF15,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF15")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF15)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF15")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iTemp)!UF15)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+'search UF16
+F.Intrinsic.Variable.UDTSeek(V.uGlobal.uOpps!UF16,V.Local.sText,2,V.Local.sReturn)
+F.Intrinsic.Control.If(V.Local.sReturn,<>,"")
+	F.Intrinsic.String.Split(V.Local.sReturn,"*!*",V.Local.sReturn)
+	F.Intrinsic.Control.For(V.Local.iC,0,V.Local.sReturn.UBound,1)
+		V.Local.iTemp.Set(V.Local.sReturn(V.Local.iC))
+		V.Local.sCompiD.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPID)
+		F.Intrinsic.Variable.UDTSeek(V.uGlobal.uMatches!CompID,V.Local.sCompID,1,V.Local.sTemp)
+		F.Intrinsic.Control.If(V.Local.sTemp,=,"")
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF16")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iC)!UF16)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("N")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.Else
+			V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+			V.uGlobal.uMatches(V.Local.iB)!CompID.Set(V.Local.sCompID)
+			V.uGlobal.uMatches(V.Local.iB)!CompName.Set(V.uGlobal.uOpps(V.Local.iTemp)!Name_Customer)
+			V.uGlobal.uMatches(V.Local.iB)!CompType.Set(V.uGlobal.uOpps(V.Local.iTemp)!COMPTYPE)
+			V.uGlobal.uMatches(V.Local.iB)!HitLoc.Set("UF16")
+			V.uGlobal.uMatches(V.Local.iB)!HitText.Set(V.uGlobal.uOpps(V.Local.iC)!UF16)
+			V.uGlobal.uMatches(V.Local.iB)!Multi.Set("Y")
+			F.Intrinsic.Math.Add(V.Local.iB,1,V.Local.iB)
+			V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iC)
+F.Intrinsic.Control.EndIf
+
+V.Local.iB.Set(V.uGlobal.uMatches.UBound)
+F.Intrinsic.Control.If(V.Local.iB,<>,0)
+	F.Intrinsic.Math.Sub(V.Local.iB,1,V.Local.iB)
+	V.uGlobal.uMatches.RedimPreserve(0,V.Local.iB)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.CallSub(Populate_grid)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("lookup_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: ATG_CRM_OPPORTUNITY_SEARCH.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.Debug.SetLA(V.Local.sError)
+	V.Global.bErrs.Set(True)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.lookup.End
+
+Program.Sub.populate_grid.Start
+F.Intrinsic.Control.SetErrorHandler("populate_grid_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.sReturn.Declare(String)
+V.Local.sPhone.Declare(String)
+V.Local.iRow.Declare(Long)
+V.Local.iRows.Declare(Long)
+V.Local.iC.Declare(Long)
+
+Gui.F_Results.gsfx_companies.Rows(1)
+Gui.F_Results.gsfx_companies.Cols(6)
+
+F.Intrinsic.Variable.UDTMultiQuickSort(V.uGlobal.uMatches!CompID,False)
+
+F.Intrinsic.Control.For(V.Local.iC,0,V.uGlobal.uMatches.UBound,1)
+	V.Local.iRow.Set(V.Screen.F_Results!gsfx_companies.Rows)
+	F.Intrinsic.Math.Add(V.Local.iRow,1,V.Local.iRows)
+	Gui.F_Results.gsfx_companies.Rows(V.Local.iRows)
+	Gui.F_Results.gsfx_companies.TextMatrix(0,V.Local.iRow,V.uGlobal.uMatches(V.Local.iC)!CompID)
+	Gui.F_Results.gsfx_companies.TextMatrix(1,V.Local.iRow,V.uGlobal.uMatches(V.Local.iC)!CompName)
+	F.Intrinsic.Control.SelectCase(V.uGlobal.uMatches(V.Local.iC)!CompType)
+	F.Intrinsic.Control.Case("10")
+		Gui.F_Results.gsfx_companies.TextMatrix(2,V.Local.iRow,"Vendor")
+	F.Intrinsic.Control.Case("15")
+		Gui.F_Results.gsfx_companies.TextMatrix(2,V.Local.iRow,"Customer")
+	F.Intrinsic.Control.Case("18")
+		Gui.F_Results.gsfx_companies.TextMatrix(2,V.Local.iRow,"Prospect")
+	F.Intrinsic.Control.Case("19")
+			Gui.F_Results.gsfx_companies.TextMatrix(2,V.Local.iRow,"Suspect")
+	F.Intrinsic.Control.EndSelect
+	Gui.F_Results.gsfx_companies.TextMatrix(3,V.Local.iRow,V.uGlobal.uMatches(V.Local.iC)!HitLoc)
+	Gui.F_Results.gsfx_companies.TextMatrix(4,V.Local.iRow,V.uGlobal.uMatches(V.Local.iC)!HitText)
+	Gui.F_Results.gsfx_companies.TextMatrix(5,V.Local.iRow,V.uGlobal.uMatches(V.Local.iC)!Multi)
+	Gui.F_Results.gsfx_companies.ApplyStyle(V.Local.iRow,2)
+F.Intrinsic.Control.Next(V.Local.iC)
+
+Gui.F_Results.gsfx_companies.FixedRows(1)
+Gui.F_Results.gsfx_companies.SetColumnPercentages(".15:.30:.10:.10:.35:.0")
+
+Gui.F_Results..Enabled(True)
+Gui.F_Results.gsfx_companies.Visible(True)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("populate_grid_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: ATG_CRM_OPPORTUNITY_SEARCH.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	V.Global.bErrs.Set(True)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.populate_grid.End
+
+program.sub.cmd_search_click.start
+F.Intrinsic.Control.SetErrorHandler("cmd_search_click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.sText.Declare(String)
+
+V.Local.sText.set(V.Screen.F_Results!txt_search_text.Text)
+F.Intrinsic.String.Trim(V.Local.sText,V.Local.sText)
+
+F.Intrinsic.Control.If(V.Local.sText,<>,"")
+	Gui.F_Results..Enabled(False)
+	Gui.F_Results.gsfx_companies.Visible(False)
+	F.Intrinsic.Control.CallSub(Lookup,"sText",V.Local.sText)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmd_search_click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: ATG_CRM_OPPORTUNITY_SEARCH.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.Debug.SetLA(V.Local.sError)
+	V.Global.bErrs.Set(True)
+Function.Intrinsic.Control.EndIf
+
+program.sub.cmd_search_click.end
+
+
